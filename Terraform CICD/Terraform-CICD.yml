@@ -1,0 +1,154 @@
+trigger: none
+# - main
+pr: none
+  # branches:
+  #   include:
+  #   - features/*
+  #   exclude:
+  #   - features/experimental/*
+  # paths:
+  #   exclude:
+  #   - README.md
+
+variables:
+  resourceGroup: Demo-Kiran
+  storageAccount: demokiran786
+  container: tfstate
+  tfstateFile: terraform.tfstate
+  anyTfChanges: false
+  tf_folder:  $(System.DefaultWorkingDirectory)/infra-as-code/terraform
+
+stages:
+- stage: Terraform_init_plan
+
+  pool:
+    vmImage: ubuntu-latest
+
+  jobs:
+ 
+  - job: terraform_init_plan
+
+    steps:
+    
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+      displayName: install Terraform
+      inputs:
+        terraformVersion: 'latest'
+        
+    - script: |
+          docker run --tty --volume $(tf_folder):/tf bridgecrew/checkov --directory /tf --compact
+      displayName: Run Static Code analysis for Terraform using Checkov
+    
+    
+    - task: TerraformTaskV1@0
+      displayName: terraform init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(tf_folder)'
+        backendServiceArm: 'VS-Azure-SC'
+        backendAzureRmResourceGroupName: '$(resourceGroup)'
+        backendAzureRmStorageAccountName: '$(storageAccount)'
+        backendAzureRmContainerName: '$(container)'
+        backendAzureRmKey: '$(tfstateFile)'
+    
+    - task: TerraformTaskV2@2
+      displayName: $ terraform plan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        workingDirectory: '$(tf_folder)'
+        commandOptions: '-out tfplan'
+        environmentServiceNameAzureRM: 'VS-Azure-SC'
+    
+
+    - script: |
+        cd $(tf_folder)
+        echo "Generating tfplan.json from tfplan..."
+        # Generate the tfplan.json file
+        terraform show -json tfplan > tfplan.json
+
+        echo "Formatting tfplan.json..."
+        # Format tfplan.json for readability (optional, can be skipped if not needed)
+        jq '.' tfplan.json > formatted_tfplan.json
+
+        echo "Extracting changes..."
+        # Show only the resource changes
+        cat tfplan.json | jq '[.resource_changes[] | {type: .type, name: .change.after.name, actions: .change.actions[]}]' > changes.json
+
+        echo "Change extraction complete. See changes.json for details."
+      displayName: 'Create tfplan.json and Extract Changes'
+
+    - task: PublishBuildArtifacts@1
+      displayName: Upload tfplan
+      inputs:
+        PathtoPublish: '$(tf_folder)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+  
+  - job: waitForValidation
+    displayName: Wait for external validation 
+    dependsOn: terraform_init_plan
+    pool: server    
+    timeoutInMinutes: 4320 # job times out in 3 days
+    steps:   
+
+    - task: ManualValidation@0
+      inputs:
+        notifyUsers: 'kiran.kamble786@gmail.com'
+        instructions: |
+          you should validate the Terraform Plan file
+          $(Build.BuildId)
+    
+- stage: Terraform_apply
+
+  pool:
+    vmImage: ubuntu-latest
+
+  jobs:
+ 
+  - job: terraform_apply
+
+    steps:
+    
+    - task: DownloadBuildArtifacts@0
+      displayName: Download tfplan
+      inputs:
+        buildType: 'current'
+        downloadType: 'specific'
+        itemPattern: 'drop/tfplan'
+        downloadPath: '$(System.ArtifactsDirectory)'
+ 
+    - task: CopyFiles@2
+      displayName: Copy tfplan
+      inputs:
+        SourceFolder: '$(System.ArtifactsDirectory)/drop'
+        Contents: 'tfplan'
+        TargetFolder: '$(tf_folder)'
+ 
+    - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+      displayName: install Terraform
+      inputs:
+        terraformVersion: 'latest'
+    
+    - task: TerraformTaskV1@0
+      displayName: terraform init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(tf_folder)'
+        backendServiceArm: 'VS-Azure-SC'
+        backendAzureRmResourceGroupName: '$(resourceGroup)'
+        backendAzureRmStorageAccountName: '$(storageAccount)'
+        backendAzureRmContainerName: '$(container)'
+        backendAzureRmKey: '$(tfstateFile)'
+        
+    - task: TerraformTaskV2@2
+      displayName: $ terraform apply
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(tf_folder)'
+        commandOptions: 'tfplan'
+        environmentServiceNameAzureRM: 'VS-Azure-SC'
+    
