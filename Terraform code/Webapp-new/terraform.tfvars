@@ -1,0 +1,16 @@
+resource_group_location = "West Europe"
+resource_group_name = "Webapp-rg"
+OS_TYPE = "Linux"
+SKU_NAME =  "S1"
+# CLIENT_ID =
+# CLIENT_SECRET =
+# TENANT_ID =
+# SUBSCRIPTION_ID =
+WEBAPP_PLAN_NAME = "Webapp-plan"
+WEBAPPNAME      =   "Webapp-78612345"
+# DOCKER_REGISTRY_SERVER_PASSWORD =  "kiran12345"
+# DOCKER_REGISTRY_SERVER_URL =   "https://index.docker.io/v1/"
+# DOCKER_REGISTRY_SERVER_USERNAME = "ray786"
+APP_AUTOSCALE =   "Webapp-autoscale"
+CUSTOM_EMAILS =    "tst@gmail.com"
+# LINUX_FX_VERSION = "DOCKER|demotf001acr.azurecr.io/python-app-docker:latest"
