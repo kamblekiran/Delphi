@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: my-app-image:latest
+        image: ndrohith09/django-ingress   # Sample image
         ports:
         - containerPort: 80
         resources:
@@ -55,4 +55,3 @@ spec:
     targetPort: 80
   selector:
     app: my-app
-
