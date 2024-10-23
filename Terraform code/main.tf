@@ -3,7 +3,7 @@
 module "ResourceGroup" {
   source              = "./module/ResourceGroup"
   resource_group_name = "Delphi"
-  resource_group_location = "West Europe"
+  resource_group_location = "East US"
 
 }
 
