@@ -4,7 +4,7 @@ variable "registry_name" {
   nullable    = false
 }
 
-variable "location" {
+variable "resource_group_location" {
   description = "The location to create the resources in."
   type        = string
   nullable    = false

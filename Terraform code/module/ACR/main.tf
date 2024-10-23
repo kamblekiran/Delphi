@@ -8,15 +8,10 @@ locals {
   diagnostic_setting_metric_categories = ["AllMetrics"]
 }
 
-resource "azurerm_resource_group" "acr_rg" {
-  name     = var.resource_group_name
-  location = var.location
-}
-
 resource "azurerm_container_registry" "this" {
   name                          = var.registry_name
-  location                      = var.location
-  resource_group_name           = azurerm_resource_group.acr_rg.name
+  location                      = var.resource_group_location
+  resource_group_name           = var.resource_group_name
   sku                           = var.sku
   admin_enabled                 = var.admin_enabled
   public_network_access_enabled = var.public_network_access_enabled
@@ -61,8 +56,8 @@ resource "azurerm_container_registry" "this" {
 
 resource "azurerm_log_analytics_workspace" "law" {
   name                = var.log_analytics_workspace
-  location            = azurerm_resource_group.acr_rg.location
-  resource_group_name = azurerm_resource_group.acr_rg.name
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
   sku                 = "PerGB2018"
   retention_in_days   = 30
 }
