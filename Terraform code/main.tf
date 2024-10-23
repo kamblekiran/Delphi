@@ -1,5 +1,5 @@
 
-
+############ To Create the Resource Group #############
 module "ResourceGroup" {
   source              = "./module/ResourceGroup"
   resource_group_name = "Delphi"
@@ -7,7 +7,7 @@ module "ResourceGroup" {
 
 }
 
-
+############# To Create the WebApp #################
 module "Webapp" {
   source              = "./module/Webapp"
   resource_group_name = module.ResourceGroup.rg_name_out
@@ -22,6 +22,7 @@ module "Webapp" {
 
 }
 
+############# To Create the keyvault #################
 module "keyvault" {
   source              = "./module/KeyVault"
   resource_group_name = module.ResourceGroup.rg_name_out
@@ -33,6 +34,7 @@ module "keyvault" {
 
 }
 
+############# To Create the ACR #################
 module "ACR" {
   source              = "./module/ACR"
   resource_group_name = module.ResourceGroup.rg_name_out
@@ -44,6 +46,7 @@ module "ACR" {
 
 }
 
+############# To Create the AKS #################
 module "AKS" {
   source              = "./module/AKS"
   resource_group_name = module.ResourceGroup.rg_name_out
